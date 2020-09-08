@@ -38,6 +38,7 @@ const writeCounter = (count, callback) => {
 
 // Public API - Fix this function //////////////////////////////////////////////
 
+// takes in a callback(err, id)
 exports.getNextUniqueId = (callback) => {
   // readCounter takes in callback(err = null, Number(fileData))
   readCounter((err, count) => {
@@ -51,12 +52,12 @@ exports.getNextUniqueId = (callback) => {
         if (err) {
           throw ('Cannot write counter');
         } else {
-          // call input callback, takes in callback(err = null, id)
+          // callback
           callback(null, counter);
         }
-      })
+      });
     }
-  })
+  });
 };
 
 
