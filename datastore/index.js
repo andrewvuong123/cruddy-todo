@@ -41,19 +41,22 @@ exports.readOne = (id, callback) => {
     if (err) {
       callback(new Error(`No item with id: ${id}`));
     } else {
-      callback(null, { id, text: data.toString() });
+      callback(null, { id: id, text: data.toString() });
     }
   });
 };
 
 exports.update = (id, text, callback) => {
-  var item = items[id];
-  if (!item) {
-    callback(new Error(`No item with id: ${id}`));
-  } else {
-    items[id] = text;
-    callback(null, { id, text });
-  }
+  // fs.access checks if file exists in dir
+  fs.access(`${exports.dataDir}/${id}.txt`, (err) => {
+    if (err) {
+      callback(new Error(`No item with id: ${id}`));
+    } else {
+      fs.writeFile(`${exports.dataDir}/${id}.txt`, text, (err) => {
+        callback(null, { id: id, text: text});
+      });
+    }
+  });
 };
 
 exports.delete = (id, callback) => {
