@@ -30,19 +30,20 @@ exports.readAll = (callback) => {
     } else {
       var data = _.map(files, (file) => {
         return {id: file.slice(0, -4), text: file.slice(0, -4)};
-      })
+      });
       callback(null, data);
     }
   });
 };
 
 exports.readOne = (id, callback) => {
-  var text = items[id];
-  if (!text) {
-    callback(new Error(`No item with id: ${id}`));
-  } else {
-    callback(null, { id, text });
-  }
+  fs.readFile(`${exports.dataDir}/${id}.txt`, (err, data) => {
+    if (err) {
+      callback(new Error(`No item with id: ${id}`));
+    } else {
+      callback(null, { id, text: data.toString() });
+    }
+  });
 };
 
 exports.update = (id, text, callback) => {
