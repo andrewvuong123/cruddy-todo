@@ -2,24 +2,24 @@ const fs = require('fs');
 const path = require('path');
 const _ = require('underscore');
 const counter = require('./counter');
+const Promise = require('bluebird');
+const readFilePromise = Promise.promisify(fs.readFile);
 
 var items = {};
 
 // Public API - Fix these CRUD functions ///////////////////////////////////////
 
 exports.create = (text, callback) => {
+
   counter.getNextUniqueId((err, id) => {
-    if (err) {
-      throw ('Cannot Create');
-    } else {
-      fs.writeFile(`${exports.dataDir}/${id}.txt`, text, (err) => {
-        if (err) {
-          throw ('Cannot Write File');
-        } else {
-          callback(null, {id,text});
-        }
-      });
-    }
+
+    fs.writeFile(`${exports.dataDir}/${id}.txt`, text, (err) => {
+      if (err) {
+        callback(err);
+      } else {
+        callback(null, { id, text });
+      }
+    });
   });
 };
 
@@ -29,9 +29,15 @@ exports.readAll = (callback) => {
       throw ('Cannot Read Files');
     } else {
       var data = _.map(files, (file) => {
-        return {id: file.slice(0, -4), text: file.slice(0, -4)};
+        var id = file.slice(0, -4);
+        var filepath = path.join(exports.dataDir, file);
+        return readFilePromise(filepath).then((fileData) => {
+          return {id: id, text: fileData.toString()};
+        });
       });
-      callback(null, data);
+      Promise.all(data).then((items) => {
+        callback(null, items);
+      });
     }
   });
 };
@@ -39,7 +45,7 @@ exports.readAll = (callback) => {
 exports.readOne = (id, callback) => {
   fs.readFile(`${exports.dataDir}/${id}.txt`, (err, data) => {
     if (err) {
-      callback(new Error(`No item with id: ${id}`));
+      callback(err);
     } else {
       callback(null, { id: id, text: data.toString() });
     }
@@ -50,7 +56,7 @@ exports.update = (id, text, callback) => {
   // fs.access checks if file exists in dir
   fs.access(`${exports.dataDir}/${id}.txt`, (err) => {
     if (err) {
-      callback(new Error(`No item with id: ${id}`));
+      callback(err);
     } else {
       fs.writeFile(`${exports.dataDir}/${id}.txt`, text, (err) => {
         callback(null, { id: id, text: text});
@@ -61,11 +67,7 @@ exports.update = (id, text, callback) => {
 
 exports.delete = (id, callback) => {
   fs.unlink(`${exports.dataDir}/${id}.txt`, (err) => {
-    if (err) {
-      callback(new Error(`No item with id: ${id}`));
-    } else {
-      callback();
-    }
+    callback(err);
   });
 };
 
